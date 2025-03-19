@@ -8,6 +8,8 @@ export const useSidebarStore = defineStore('sidebarStore', () => {
   }
   const { isMobileMode, leftSidebarSize: _leftSidebarSize } = useGlobal()
 
+  const isFullScreen = ref(false)
+
   const tablesStore = useTablesStore()
   const _isLeftSidebarOpen = ref(!isViewPortMobile())
   const isLeftSidebarOpen = computed({
@@ -85,6 +87,7 @@ export const useSidebarStore = defineStore('sidebarStore', () => {
     windowSize: width,
     formRightSidebarState,
     formRightSidebarWidthPercent,
+    isFullScreen,
   }
 })
 

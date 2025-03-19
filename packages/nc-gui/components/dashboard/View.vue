@@ -15,6 +15,7 @@ const {
   leftSideBarSize: sideBarSize,
   leftSidebarState: sidebarState,
   mobileNormalizedSidebarSize,
+  isFullScreen,
 } = storeToRefs(useSidebarStore())
 
 const wrapperRef = ref<HTMLDivElement>()
@@ -87,6 +88,7 @@ watch(isLeftSidebarOpen, () => {
 function handleMouseMove(e: MouseEvent) {
   if (isMobileMode.value) return
   if (!wrapperRef.value) return
+  if (isFullScreen.value) return
   if (sidebarState.value === 'openEnd') return
 
   if (e.clientX < 4 && ['hiddenEnd', 'peekCloseEnd'].includes(sidebarState.value)) {
