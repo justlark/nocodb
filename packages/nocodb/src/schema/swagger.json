@@ -23831,9 +23831,7 @@
               "insert",
               "update",
               "delete",
-              "bulkInsert",
-              "bulkUpdate",
-              "bulkDelete",
+              "any",
               "trigger"
             ],
             "type": "string",
