@@ -5270,6 +5270,24 @@
                 "properties": {
                   "type": {
                     "enum": [
+                      "SingleLineText"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "Attachment"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
                       "LongText"
                     ]
                   },
