@@ -153,7 +153,11 @@ export type FieldUpdateV3Type = FieldBaseV3Type &
         options?: FieldOptionsSelectV3Type;
       }
     | {
-        type?: 'Rating' | 'Checkbox';
+        type?: 'Checkbox';
+        options?: FieldOptionsCheckboxV3Type;
+      }
+    | {
+        type?: 'Rating';
         options?: FieldOptionsRatingV3Type;
       }
     | {
@@ -188,6 +192,12 @@ export type FieldV3Type = FieldBaseV3Type &
   (
     | {
         type?: 'SingleLineText';
+      }
+    | {
+        type?: 'Attachment';
+      }
+    | {
+        type?: 'CreatedTime' | 'LastModifiedTime';
       }
     | {
         type?: 'LongText';
@@ -226,7 +236,11 @@ export type FieldV3Type = FieldBaseV3Type &
         options?: FieldOptionsSelectV3Type;
       }
     | {
-        type?: 'Rating' | 'Checkbox';
+        type?: 'Checkbox';
+        options?: FieldOptionsCheckboxV3Type;
+      }
+    | {
+        type?: 'Rating';
         options?: FieldOptionsRatingV3Type;
       }
     | {

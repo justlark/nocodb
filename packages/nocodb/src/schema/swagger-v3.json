@@ -5529,6 +5529,25 @@
                 "properties": {
                   "type": {
                     "enum": [
+                      "Attachment"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "CreatedTime",
+                      "LastModifiedTime"
+                    ]
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
                       "LongText"
                     ]
                   },
@@ -5640,8 +5659,19 @@
                 "properties": {
                   "type": {
                     "enum": [
-                      "Rating",
                       "Checkbox"
+                    ]
+                  },
+                  "options": {
+                    "$ref": "#/components/schemas/FieldOptions_Checkbox"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "Rating"
                     ]
                   },
                   "options": {
@@ -5857,8 +5887,19 @@
                 "properties": {
                   "type": {
                     "enum": [
-                      "Rating",
                       "Checkbox"
+                    ]
+                  },
+                  "options": {
+                    "$ref": "#/components/schemas/FieldOptions_Checkbox"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "type": {
+                    "enum": [
+                      "Rating"
                     ]
                   },
                   "options": {
