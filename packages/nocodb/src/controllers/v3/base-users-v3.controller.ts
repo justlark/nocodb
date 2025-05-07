@@ -11,6 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BaseRolesV3Type } from 'nocodb-sdk';
+import { PREFIX_APIV3_META } from 'src/constants/controllers';
 import type {
   BaseUserCreateV3Type,
   BaseUserDeleteV3Type,
@@ -30,9 +31,9 @@ import { BaseUsersV3Service } from '~/services/v3/base-users-v3.service';
 export class BaseUsersV3Controller {
   private builder: () => ApiV3DataTransformationBuilder;
 
-  constructor(protected readonly baseUsersV3Service: BaseUsersV3Service) {}
+  constructor(protected readonly baseUsersV3Service: BaseUsersV3Service) { }
 
-  @Get(['/api/v3/meta/bases/:baseId/users'])
+  @Get([`${PREFIX_APIV3_META}/bases/:baseId/users`])
   @Acl('baseUserList')
   async userList(
     @TenantContext()
@@ -45,7 +46,7 @@ export class BaseUsersV3Controller {
     });
   }
 
-  @Post(['/api/v3/meta/bases/:baseId/users'])
+  @Post([`${PREFIX_APIV3_META}/bases/:baseId/users`])
   @HttpCode(200)
   @Acl('userInvite')
   async userInvite(
@@ -63,7 +64,7 @@ export class BaseUsersV3Controller {
     });
   }
 
-  @Patch(['/api/v3/meta/bases/:baseId/users'])
+  @Patch([`${PREFIX_APIV3_META}/bases/:baseId/users`])
   @Acl('baseUserUpdate')
   async baseUserUpdate(
     @TenantContext()
@@ -83,7 +84,7 @@ export class BaseUsersV3Controller {
     });
   }
 
-  @Delete(['/api/v3/meta/bases/:baseId/users'])
+  @Delete([`${PREFIX_APIV3_META}/bases/:baseId/users`])
   @Acl('baseUserDelete')
   async baseUserDelete(
     @TenantContext() context: NcContext,

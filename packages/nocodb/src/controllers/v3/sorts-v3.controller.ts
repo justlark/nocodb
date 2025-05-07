@@ -17,14 +17,14 @@ import { MetaApiLimiterGuard } from '~/guards/meta-api-limiter.guard';
 import { TenantContext } from '~/decorators/tenant-context.decorator';
 import { NcContext, NcRequest } from '~/interface/config';
 import { SortsV3Service } from '~/services/v3/sorts-v3.service';
-import { PREFIX_APIV3_METABASE } from '~/constants/controllers';
+import { PREFIX_APIV3_META } from '~/constants/controllers';
 
 @Controller()
 @UseGuards(MetaApiLimiterGuard, GlobalGuard)
 export class SortsV3Controller {
-  constructor(private readonly sortsV3Service: SortsV3Service) {}
+  constructor(private readonly sortsV3Service: SortsV3Service) { }
 
-  @Get(`${PREFIX_APIV3_METABASE}/views/:viewId/sorts`)
+  @Get(`${PREFIX_APIV3_META}/views/:viewId/sorts`)
   @Acl('sortList')
   async sortList(
     @TenantContext() context: NcContext,
@@ -37,7 +37,7 @@ export class SortsV3Controller {
     };
   }
 
-  @Post(`${PREFIX_APIV3_METABASE}/views/:viewId/sorts/`)
+  @Post(`${PREFIX_APIV3_META}/views/:viewId/sorts/`)
   @HttpCode(200)
   @Acl('sortCreate')
   async sortCreate(
@@ -54,7 +54,7 @@ export class SortsV3Controller {
     return sort;
   }
 
-  @Patch(`${PREFIX_APIV3_METABASE}/views/:viewId/sorts`)
+  @Patch(`${PREFIX_APIV3_META}/views/:viewId/sorts`)
   @Acl('sortUpdate')
   async sortUpdate(
     @TenantContext() context: NcContext,
@@ -71,7 +71,7 @@ export class SortsV3Controller {
     return sort;
   }
 
-  @Delete(`${PREFIX_APIV3_METABASE}/views/:viewId/sorts`)
+  @Delete(`${PREFIX_APIV3_META}/views/:viewId/sorts`)
   @Acl('sortDelete')
   async sortDelete(
     @TenantContext() context: NcContext,

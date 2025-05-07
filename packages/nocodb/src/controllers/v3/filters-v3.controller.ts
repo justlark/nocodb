@@ -18,7 +18,7 @@ import { MetaApiLimiterGuard } from '~/guards/meta-api-limiter.guard';
 import { TenantContext } from '~/decorators/tenant-context.decorator';
 import { NcContext, NcRequest } from '~/interface/config';
 import { FiltersV3Service } from '~/services/v3/filters-v3.service';
-import { PREFIX_APIV3_METABASE } from '~/constants/controllers';
+import { PREFIX_APIV3_META } from '~/constants/controllers';
 
 type Filter = {
   field_id: string; // Replace with the actual type if not string
@@ -46,9 +46,9 @@ export type FilterGroup = FilterGroupLevel1;
 @Controller()
 @UseGuards(MetaApiLimiterGuard, GlobalGuard)
 export class FiltersV3Controller {
-  constructor(protected readonly filtersV3Service: FiltersV3Service) {}
+  constructor(protected readonly filtersV3Service: FiltersV3Service) { }
 
-  @Get(`${PREFIX_APIV3_METABASE}/views/:viewId/filters`)
+  @Get(`${PREFIX_APIV3_META}/views/:viewId/filters`)
   @Acl('filterList')
   async filterList(
     @TenantContext() context: NcContext,
@@ -64,9 +64,9 @@ export class FiltersV3Controller {
   }
 
   @Post([
-    `${PREFIX_APIV3_METABASE}/views/:viewId/filters`,
-    `${PREFIX_APIV3_METABASE}/hooks/:hookId/filters`,
-    `${PREFIX_APIV3_METABASE}/links/:linkColumnId/filters`,
+    `${PREFIX_APIV3_META}/views/:viewId/filters`,
+    `${PREFIX_APIV3_META}/hooks/:hookId/filters`,
+    `${PREFIX_APIV3_META}/links/:linkColumnId/filters`,
   ])
   @HttpCode(200)
   @Acl('filterCreate')
@@ -87,7 +87,7 @@ export class FiltersV3Controller {
     return filter;
   }
 
-  @Patch(`${PREFIX_APIV3_METABASE}/views/:viewId/filters`)
+  @Patch(`${PREFIX_APIV3_META}/views/:viewId/filters`)
   @Acl('filterUpdate')
   async filterUpdate(
     @TenantContext() context: NcContext,
@@ -105,7 +105,7 @@ export class FiltersV3Controller {
     return filter;
   }
 
-  @Put(`${PREFIX_APIV3_METABASE}/views/:viewId/filters`)
+  @Put(`${PREFIX_APIV3_META}/views/:viewId/filters`)
   @Acl('filterUpdate')
   async filterReplace(
     @TenantContext() context: NcContext,
@@ -122,7 +122,7 @@ export class FiltersV3Controller {
     return filter;
   }
 
-  @Delete(`${PREFIX_APIV3_METABASE}/views/:viewId/filters`)
+  @Delete(`${PREFIX_APIV3_META}/views/:viewId/filters`)
   @Acl('filterDelete')
   async filterDelete(
     @TenantContext() context: NcContext,
