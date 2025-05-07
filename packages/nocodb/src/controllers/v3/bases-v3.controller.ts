@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { BaseCreateV3Type, BaseUpdateV3Type } from 'nocodb-sdk';
+import { PREFIX_APIV3_META } from 'src/constants/controllers';
 import { GlobalGuard } from '~/guards/global/global.guard';
 import { Acl } from '~/middlewares/extract-ids/extract-ids.middleware';
 import { MetaApiLimiterGuard } from '~/guards/meta-api-limiter.guard';
@@ -22,12 +23,12 @@ import { BasesV3Service } from '~/services/v3/bases-v3.service';
 @UseGuards(MetaApiLimiterGuard, GlobalGuard)
 @Controller()
 export class BasesV3Controller {
-  constructor(protected readonly baseV3Service: BasesV3Service) {}
+  constructor(protected readonly baseV3Service: BasesV3Service) { }
 
   @Acl('baseList', {
     scope: 'org',
   })
-  @Get('/api/v3/meta/workspaces/:workspaceId/bases')
+  @Get(`${PREFIX_APIV3_META}/workspaces/:workspaceId/bases`)
   async list(
     @TenantContext() context: NcContext,
     @Query() queryParams: Record<string, any>,
@@ -43,7 +44,7 @@ export class BasesV3Controller {
   }
 
   @Acl('baseGet')
-  @Get('/api/v3/meta/bases/:baseId')
+  @Get(`${PREFIX_APIV3_META}/bases/:baseId`)
   async baseGet(
     @TenantContext() context: NcContext,
     @Param('baseId') baseId: string,
@@ -57,7 +58,7 @@ export class BasesV3Controller {
   }
 
   @Acl('baseUpdate')
-  @Patch('/api/v3/meta/bases/:baseId')
+  @Patch(`${PREFIX_APIV3_META}/bases/:baseId`)
   async baseUpdate(
     @TenantContext() context: NcContext,
     @Param('baseId') baseId: string,
@@ -75,7 +76,7 @@ export class BasesV3Controller {
   }
 
   @Acl('baseDelete')
-  @Delete('/api/v3/meta/bases/:baseId')
+  @Delete(`${PREFIX_APIV3_META}/bases/:baseId`)
   async baseDelete(
     @TenantContext() context: NcContext,
     @Param('baseId') baseId: string,
@@ -94,7 +95,7 @@ export class BasesV3Controller {
     scope: 'org',
   })
   @HttpCode(200)
-  @Post('/api/v3/meta/workspaces/:workspaceId/bases')
+  @Post(`${PREFIX_APIV3_META}/workspaces/:workspaceId/bases`)
   async baseCreate(
     @TenantContext() context: NcContext,
     @Body() baseBody: BaseCreateV3Type,
