@@ -20,7 +20,7 @@ import { NcContext, NcRequest } from '~/interface/config';
 @Controller()
 @UseGuards(MetaApiLimiterGuard, GlobalGuard)
 export class CalendarsController {
-  constructor(private readonly calendarsService: CalendarsService) {}
+  constructor(private readonly calendarsService: CalendarsService) { }
 
   @Get([
     '/api/v1/db/meta/calendars/:calendarViewId',

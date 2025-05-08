@@ -174,7 +174,7 @@ const onValueChange = async () => {
     if (i === 0) {
       return {
         fk_from_column_id: range.fk_from_column_id,
-        fk_to_column_id: undefined,
+        fk_to_column_id: range.fk_to_column_id,
       }
     }
     return range
@@ -269,7 +269,7 @@ const onValueChange = async () => {
               </div>
             </a-select-option>
           </a-select>
-          <div v-if="isEeUI" class="w-full space-y-2">
+          <div class="w-full space-y-2">
             <NcTooltip v-if="range.fk_to_column_id === null && isRangeEnabled" placement="left" :disabled="!isDisabled">
               <NcButton
                 size="small"
@@ -288,7 +288,7 @@ const onValueChange = async () => {
               <template #title> Coming Soon!! Currently, range support is only available for Date field. </template>
             </NcTooltip>
 
-            <template v-else-if="isEeUI">
+            <template v-else>
               <span>
                 {{ $t('activity.withEndDate') }}
               </span>

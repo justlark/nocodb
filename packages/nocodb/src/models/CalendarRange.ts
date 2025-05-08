@@ -8,6 +8,7 @@ import { CacheDelDirection, CacheScope, MetaTable } from '~/utils/globals';
 export default class CalendarRange implements CalendarRangeType {
   id?: string;
   fk_from_column_id?: string;
+  fk_to_column_id?: string;
   fk_workspace_id?: string;
   base_id?: string;
   fk_view_id?: string;
@@ -23,11 +24,16 @@ export default class CalendarRange implements CalendarRangeType {
   ) {
     const calRanges: {
       fk_from_column_id?: string;
+      fk_to_column_id?: string;
       fk_view_id?: string;
     }[] = [];
 
     for (const d of data) {
-      const tempObj = extractProps(d, ['fk_from_column_id', 'fk_view_id']);
+      const tempObj = extractProps(d, [
+        'fk_from_column_id',
+        'fk_to_column_id',
+        'fk_view_id',
+      ]);
       calRanges.push(tempObj);
     }
 
@@ -87,10 +93,10 @@ export default class CalendarRange implements CalendarRangeType {
 
     return ranges?.length
       ? {
-          ranges: ranges.map(
-            ({ created_at, updated_at, ...c }) => new CalendarRange(c),
-          ),
-        }
+        ranges: ranges.map(
+          ({ created_at, updated_at, ...c }) => new CalendarRange(c),
+        ),
+      }
       : null;
   }
 
@@ -158,6 +164,11 @@ export default class CalendarRange implements CalendarRangeType {
           _or: [
             {
               fk_from_column_id: {
+                eq: columnId,
+              },
+            },
+            {
+              fk_to_column_id: {
                 eq: columnId,
               },
             },
