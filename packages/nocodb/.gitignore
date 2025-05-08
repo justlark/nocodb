@@ -45,6 +45,7 @@ test_sakila_?.db
 # ignoring to avoid commiting those files
 # nc-gui dir is copied for building local docker.
 /docker/main.js
+/docker/main.js.map
 /docker/nc-gui/
 /docker/public/
 
