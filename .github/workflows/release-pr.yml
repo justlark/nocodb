@@ -6,8 +6,7 @@ on:
     # reopened: closed pull request is reopened
     # synchronize: commit(s) pushed to the pull request
     # ready_for_review: non PR release
-    # closed: pull request is closed, used to delete uffizzi previews
-    types: [opened, reopened, synchronize, ready_for_review, closed]
+    types: [opened, reopened, synchronize, ready_for_review]
     paths:
       - "packages/nocodb-sdk/**"
       - "packages/nc-gui/**"
@@ -61,16 +60,6 @@ jobs:
       targetEnv: 'DEV'
       isDaily: 'N'
 
-  # Build executables and publish to GitHub
-  # release-executables:
-  #   if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false && github.base_ref == 'develop' && github.event.action != 'closed' }}
-  #   needs: [set-tag, release-npm]
-  #   uses: ./.github/workflows/release-timely-executables.yml
-  #   with:
-  #     tag: ${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }}
-  #   secrets:
-  #     NC_GITHUB_TOKEN: "${{ secrets.NC_GITHUB_TOKEN }}"
-
   # Add a comment for PR docker build
   leave-comment:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false && github.base_ref == 'develop' && github.event.action != 'closed' }}
@@ -84,96 +73,3 @@ jobs:
             ```
             docker run -d -p 8888:8080 ghcr.io/${{ github.repository_owner }}/nocodb-fanjam-timely:${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }}
             ```
-
-  # Create a preview for the pull request
-  preview-pull-request:
-    name: "Trigger Uffizzi Preview"
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false && github.base_ref == 'develop' && github.event.action != 'closed' }}
-    runs-on: 'ubuntu-22.04'
-    needs: [release-docker, set-tag]
-    outputs:
-      compose-file-cache-key:  ${{ env.COMPOSE_FILE_HASH }}
-    steps:
-      - name: Checkout git repo
-        uses: actions/checkout@v3
-      - name: Render Compose File
-        run: |
-          NOCODB_IMAGE=ghcr.io/${{ github.repository_owner }}/nocodb-fanjam-timely:${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }}
-          export NOCODB_IMAGE
-          # Render simple template from environment variables.
-          envsubst < .github/uffizzi/docker-compose.uffizzi.yml > docker-compose.rendered.yml
-          cat docker-compose.rendered.yml
-      - name: Upload Rendered Compose File as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-spec-docker-compose
-          path: docker-compose.rendered.yml
-          retention-days: 2
-      - name: Serialize PR Event to File
-        run:  |
-          cat << EOF > event.json
-          ${{ toJSON(github.event) }}
-          EOF
-      - name: Upload PR Event as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-spec-event
-          path: event.json
-          retention-days: 2
-
-  # Add a comment for PR executable build
-  # leave-executable-comment:
-  #   if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false && github.base_ref == 'develop' && github.event.action != 'closed' }}
-  #   runs-on: 'ubuntu-22.04'
-  #   needs: [release-executables, set-tag]
-  #   steps:
-  #     - uses: peter-evans/commit-comment@v2
-  #       with:
-  #         body: |
-  #           ### Run Executables
-
-  #           #### MacOS
-
-  #           ```bash
-  #           mkdir -p ./${{ needs.set-tag.outputs.current_version }}/${{ needs.set-tag.outputs.target_tag }} && cd "$_" \
-  #               && curl http://dl.nocodb.com/${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }}/Noco-macos-arm64 -o noco -L \
-  #               && chmod +x noco \
-  #               && ./noco
-  #           ```
-  #           #### Linux
-
-  #           ```bash
-  #           mkdir -p ./${{ needs.set-tag.outputs.current_version }}/${{ needs.set-tag.outputs.target_tag }} && cd "$_" \
-  #              && curl http://dl.nocodb.com/${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }}/Noco-linux-x64 -o noco -L \
-  #              && chmod +x noco \
-  #              && ./noco
-  #           ```
-  #           #### Windows
-
-  #           ```bash
-  #           iwr http://dl.nocodb.com/${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }}/Noco-win-arm64.exe
-  #           .\Noco-win-arm64.exe
-  #           ```
-
-  #           For executables visit [here](https://github.com/nocodb/nocodb-timely/releases/tag/${{ needs.set-tag.outputs.current_version }}-${{ needs.set-tag.outputs.target_tag }})
-
-  # delete the uffizzi preview created off of this PR
-  delete-uffizzi-preview:
-    name: Call for Preview Deletion
-    runs-on: ubuntu-22.04
-    if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.actor != 'dependabot[bot]' && github.event.pull_request.draft == false && github.base_ref == 'develop' && github.event.action == 'closed' }}
-    steps:
-      # If this PR is closing, we will not render a compose file nor pass it to the next workflow.
-      - name: Serialize PR Event to File
-        run:  |
-          cat << EOF > event.json
-          ${{ toJSON(github.event) }}
-
-          EOF
-      - name: Upload PR Event as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: preview-spec-event
-          path: event.json
-          retention-days: 2
-          overwrite: true

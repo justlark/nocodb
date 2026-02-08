@@ -84,14 +84,3 @@ jobs:
       currentVersion: 'N/A'
       tag: ${{ needs.process-input.outputs.target_tag }}
       targetEnv: ${{ github.event.inputs.targetEnv || 'PROD' }}
-
-  # Close all issues with target tags 'Status: Ready for Next Release'
-  # close-issues:
-  #   needs: [release-docker, process-input]
-  #   uses: ./.github/workflows/release-close-issue.yml
-  #   with:
-  #     issue_label: '🚀 Status: Ready for Next Release'
-  #     version: ${{ needs.process-input.outputs.target_tag }}
-
-  #  aiopusher:
-  #    uses: ./.github/workflows/nix-aiopusher.yml
