@@ -52,7 +52,7 @@ export const useNotification = defineStore('notificationStore', () => {
         unreadCount.value = unreadCount.value + 1
       }
 
-      timeOutId = setTimeout(pollNotifications, 0)
+      timeOutId = setTimeout(pollNotifications, 1000)
     } catch (e) {
       // If request is cancelled, do nothing
       if (axios.isCancel(e)) return
@@ -200,7 +200,7 @@ export const useNotification = defineStore('notificationStore', () => {
     // For playwright, polling will cause the test to hang indefinitely
     // as we wait for the networkidle event. So, we disable polling for playwright
     if (!ncIsPlaywright()) {
-      clearPolling().catch((e) => console.log(e))
+      await clearPolling()
       pollNotifications().catch((e) => console.log(e))
     }
   }
