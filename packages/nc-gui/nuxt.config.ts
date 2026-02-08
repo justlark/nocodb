@@ -15,6 +15,11 @@ export default defineNuxtConfig({
     compatibilityVersion: 4,
   },
 
+  sourcemap: {
+    client: true,
+    server: false,
+  },
+
   ignore: [
     // 'pages/playground/**/*'
   ],
@@ -154,7 +159,6 @@ export default defineNuxtConfig({
         ignoreTryCatch: true,
       },
       minify: true,
-      sourcemap: true,
       rollupOptions: {},
     },
     plugins: [
