@@ -153,7 +153,7 @@ export default defineNuxtConfig({
       commonjsOptions: {
         ignoreTryCatch: true,
       },
-      minify: process.env.NODE_ENV === 'production',
+      minify: process.env.NC_MINIFY !== 'false',
       rollupOptions: {},
     },
     plugins: [

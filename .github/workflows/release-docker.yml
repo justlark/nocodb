@@ -134,6 +134,8 @@ jobs:
       - name: Build nocodb (DEV)
         if: ${{ (github.event.inputs.targetEnv || inputs.targetEnv) == 'DEV' }}
         run: |
+          export NC_MINIFY=false
+
           # Generate and copy GUI to docker directory
           cd packages/nc-gui
           pnpm run generate
