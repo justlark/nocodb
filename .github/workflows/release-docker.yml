@@ -136,8 +136,10 @@ jobs:
         run: |
           export NC_MINIFY=false
 
-          # Generate and copy GUI to docker directory
+          # Generate and copy GUI to docker directory. Delete the build cache
+          # to force a completely fresh build that will respect `NC_MINIFY`.
           cd packages/nc-gui
+          rm -rf .nuxt .output dist
           pnpm run generate
           rsync -rvzh ./dist/ ../nocodb/docker/nc-gui/
 
