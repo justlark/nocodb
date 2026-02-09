@@ -5,7 +5,7 @@ on:
 
 jobs:
   playwright:
-    runs-on: [self-hosted, v3]
+    runs-on: ubuntu-22.04
     timeout-minutes: 100
     steps:
       - name: Checkout
@@ -23,7 +23,7 @@ jobs:
       - name: Get pnpm store directory
         shell: bash
         run: |
-          echo "STORE_PATH=/root/setup-pnpm/node_modules/.bin/store/v3" >> $GITHUB_ENV
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
       - uses: actions/cache@v3
         name: Setup pnpm cache
         with:
@@ -38,12 +38,9 @@ jobs:
         run: |
           pnpm run build
         timeout-minutes: 20
-      - name: upload frontend (nc-gui) build to artf server
-        working-directory: ./
-        run: |
-          # expects the variables to be available in runner context.
-          FILE="$(echo ${GITHUB_REPOSITORY} | sed "s,/,-,g")-${GITHUB_RUN_ID}.zip"
-          cd ./packages/nc-gui/
-          zip -r ${FILE} .output || echo "UI build directory does not exists" >&2
-          echo "uploading  ${FILE} to http://65.21.27.147/upload/${FILE}"
-          time curl -T "${FILE}" http://65.21.27.147/upload/${FILE} -n
+      - name: Upload frontend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nc-gui-build
+          path: ./packages/nc-gui/.output/
+          retention-days: 1
