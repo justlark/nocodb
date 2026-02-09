@@ -60,11 +60,12 @@ jobs:
         working-directory: ./packages/nocodb
         run: |
           pnpm run watch:run:playwright:pg &> ${{ inputs.db }}_${{ inputs.shard }}_test_backend.log &
-      - name: Download frontend build artifact
-        uses: actions/download-artifact@v4
+      - name: Restore frontend build
+        uses: actions/cache/restore@v4
         with:
-          name: nc-gui-build
           path: ./packages/nc-gui/.output/
+          key: nc-gui-build-${{ github.run_id }}
+          fail-on-cache-miss: true
       - name: start frontend
         working-directory: ./packages/nc-gui/
         run: |
