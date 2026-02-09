@@ -13,7 +13,7 @@ on:
 
 jobs:
   playwright:
-    runs-on: [self-hosted, v3]
+    runs-on: ubuntu-22.04
     timeout-minutes: 100
     steps:
       - name: Checkout
@@ -31,7 +31,7 @@ jobs:
       - name: Get pnpm store directory
         shell: bash
         run: |
-          echo "STORE_PATH=/root/setup-pnpm/node_modules/.bin/store/v3" >> $GITHUB_ENV
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
       - uses: actions/cache@v3
         name: Setup pnpm cache
         with:
@@ -43,70 +43,29 @@ jobs:
         if: ${{ inputs.db == 'pg' || ( inputs.db == 'sqlite' && inputs.shard == '1' ) }}
         working-directory: ./
         run: |
-          service postgresql start
-          cd /var/lib/postgresql/ && sudo -u postgres psql -c "SELECT 'dropdb '||datname||'' FROM pg_database WHERE datistemplate = false AND datallowconn = true And datname NOT IN ('postgres')" |grep ' dropdb ' |  sudo -u postgres /bin/bash ; cd
-          sudo -u postgres psql -c "ALTER USER postgres WITH PASSWORD 'password';" 
-          sudo -u postgres psql -c "ALTER USER postgres WITH SUPERUSER;" 
-          service postgresql restart
-      - name: Kill stale servers
-        run: |
-          # export NODE_OPTIONS=\"--max_old_space_size=16384\";
-          kill -9 $(lsof -t -i:8080) || echo "no process running on 8080"
-          kill -9 $(lsof -t -i:3000) || echo "no process running on 3000"
+          docker compose -f ./tests/playwright/scripts/docker-compose-playwright-pg.yml up -d
       - name: Set CI env
         run: export CI=true
       - name: Set NC Edition
         run: export EE=false
       - name: install dependencies
         run: pnpm bootstrap
-      - name: Setup mysql
-        if: ${{ inputs.db == 'mysql' }}
-        working-directory: ./packages/nocodb/tests/mysql-sakila-db
-        run: |
-          # Get a list of non-system databases and construct the DROP DATABASE statement for each
-          service mysql start
-          mysql -u'root' -p'password' -e "SHOW DATABASES" --skip-column-names | grep -Ev "(information_schema|mysql|performance_schema|sys)" | while read db; do
-          mysql -u'root' -p'password' -e "DROP DATABASE IF EXISTS \`$db\`";
-          done
-          # keep sql_mode default except remove "STRICT_TRANS_TABLES"
-          mysql -u'root' -p'password' -e "SET GLOBAL sql_mode = 'ONLY_FULL_GROUP_BY,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';"
-          # this is only needed for connecting to sakila db as its refeferred in multiple places in test code          
-          mysql -u'root' -p'password' < 01-mysql-sakila-schema.sql   
-          mysql -u'root' -p'password' < 02-mysql-sakila-insert-data.sql
       - name: Run backend
         if: ${{ inputs.db == 'sqlite' }}
         working-directory: ./packages/nocodb
         run: |
           pnpm run watch:run:playwright &> ${{ inputs.db }}_${{ inputs.shard }}_test_backend.log &
-      - name: Run backend:mysql
-        if: ${{ inputs.db == 'mysql' }}
-        working-directory: ./packages/nocodb
-        run: |
-          pnpm run watch:run:playwright:mysql &> ${{ inputs.db }}_${{ inputs.shard }}_test_backend.log &
       - name: Run backend:pg
         if: ${{ inputs.db == 'pg' }}
         working-directory: ./packages/nocodb
         run: |
           pnpm run watch:run:playwright:pg &> ${{ inputs.db }}_${{ inputs.shard }}_test_backend.log &
-      - name: download ui build from artf server
-        working-directory: ./packages/nc-gui/
-        run: |
-          # expects the variables to be available in runner context.
-          rm -rf .output.zip .output
-          FILE="$(echo ${GITHUB_REPOSITORY} | sed "s,/,-,g")-${GITHUB_RUN_ID}.zip"
-          BUILD_FILE_URL=http://65.21.27.147/gh-artifacts/ui-builds/${FILE}
-          time curl -o output.zip ${BUILD_FILE_URL} -n
-          unzip -oq output.zip 
-
-          # path="gh-artifacts/runs/${GITHUB_RUN_ID}/ui-build/.output"
-          # target_dir="/mnt/${path}"
-          # if [[ -d ${target_dir} ]]; then
-          #   echo "Directory ${target_dir} exists."
-          #   cp -r ${target_dir} . || echo "playwright reports directory does not exists" >>  ${target_dir}/playwright-report/index.html
-          # else
-          #   echo "Error: Directory ${target_dir} does not exists."
-          #   exit 1
-          # fi
+      - name: Restore frontend build
+        uses: actions/cache/restore@v4
+        with:
+          path: ./packages/nc-gui/.output/
+          key: nc-gui-build-${{ github.run_id }}
+          fail-on-cache-miss: true
       - name: start frontend
         working-directory: ./packages/nc-gui/
         run: |
@@ -197,25 +156,7 @@ jobs:
           name: backend-logs-${{ inputs.db }}-${{ inputs.shard }}
           path: ./packages/nocodb/${{ inputs.db }}_${{ inputs.shard }}_test_backend.log
           retention-days: 2
-      - name: stop database servers
-        if: always()
-        working-directory: ./packages/nocodb
+      - name: Stop database containers
+        if: ${{ always() && (inputs.db == 'pg' || (inputs.db == 'sqlite' && inputs.shard == '1')) }}
         run: |
-          service postgresql stop
-          service mysql stop
-      - name: Copy Artifacts to Local Artifacts Dir
-        if: always()
-        working-directory: ./
-        run: |
-          # expects the variables to be available in runner context.
-          path="gh-artifacts/runs/${GITHUB_RUN_ID}/run-attempt/${GITHUB_RUN_ATTEMPT}/job_name/"${GITHUB_JOB}"-${{ inputs.shard }}/${RANDOM}-$(date +%s)"
-          target_dir="/mnt/${path}"
-          mkdir -p ${target_dir}
-          mkdir -p ${target_dir}/playwright-report
-          # start : add any artifacts to be copied here
-          cp -r ./tests/playwright/playwright-report ${target_dir}/  || echo "playwright reports directory does not exists" >>  ${target_dir}/playwright-report/index.html
-          cp ./packages/nocodb/*_test_backend.log ${target_dir}/ || echo "backend logs file does not exists" >> ${target_dir}/index.html
-          # end: artifacts copy
-          SUMMARY='[Artifacts]('${REPORTS_HOST:-http://135.181.48.96}/${path}')
-          [playwright-report]('${REPORTS_HOST:-http://135.181.48.96}/${path}'/playwright-report)'
-          echo "$SUMMARY" >> $GITHUB_STEP_SUMMARY
+          docker compose -f ./tests/playwright/scripts/docker-compose-playwright-pg.yml down
