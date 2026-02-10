@@ -129,7 +129,8 @@ jobs:
         working-directory: ${{ env.working-directory }}
         run: |
           pnpm run docker:build
-          pnpm uninstall --save-prod nocodb-sdk
+          rsync -rvzh ../nc-lib-gui/lib/dist/ docker/nc-gui/
+          pnpm uninstall --save-prod nocodb-sdk nc-lib-gui
 
       - name: Build nocodb (DEV)
         if: ${{ (github.event.inputs.targetEnv || inputs.targetEnv) == 'DEV' }}
@@ -142,7 +143,7 @@ jobs:
           # Build nocodb with timely config
           cd ../nocodb
           EE=true pnpm exec rspack --config rspack.timely.config.js
-          pnpm uninstall --save-prod nocodb-sdk
+          pnpm uninstall --save-prod nocodb-sdk nc-lib-gui
 
           # Update version in package.json
           jq --arg VERSION "${{ steps.get-docker-repository.outputs.DOCKER_BUILD_TAG }}" '.version = $VERSION' package.json > tmp.json
