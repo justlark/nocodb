@@ -595,6 +595,8 @@ export function useInfiniteData(args: {
     clearTimeout(upgradeModalTimer)
   })
 
+  const MAX_FORMULA_ERROR_RETRIES = 3
+
   async function loadData(
     params: Parameters<Api<any>['dbViewRow']['list']>[4] & {
       limit?: number
@@ -603,6 +605,7 @@ export function useInfiniteData(args: {
     } = {},
     _shouldShowLoading?: boolean,
     path: Array<number> = [],
+    _formulaRetryCount = 0,
   ): Promise<Row[]> {
     if ((!base?.value?.id || !meta.value?.id || !viewMeta.value?.id) && !isPublic?.value) return []
 
@@ -664,9 +667,9 @@ export function useInfiniteData(args: {
       if (error?.response?.data.error === 'INVALID_OFFSET_VALUE') {
         return []
       }
-      if (error?.response?.data?.error === 'FORMULA_ERROR') {
+      if (error?.response?.data?.error === 'FORMULA_ERROR' && _formulaRetryCount < MAX_FORMULA_ERROR_RETRIES) {
         await tablesStore.reloadTableMeta(meta.value!.id! as string)
-        return loadData(params)
+        return loadData(params, _shouldShowLoading, path, _formulaRetryCount + 1)
       }
 
       console.error(error)

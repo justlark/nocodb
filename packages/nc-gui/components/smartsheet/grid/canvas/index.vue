@@ -604,11 +604,17 @@ watch(vSelectedAllRecords, (val) => {
 
 const COLUMN_BUFFER_SIZE = 5
 
+let calculateSlicesRetries = 0
+const MAX_CALCULATE_SLICES_RETRIES = 20
+
 const calculateSlices = () => {
   if (!containerRef.value?.clientWidth || !containerRef.value?.clientHeight) {
-    setTimeout(calculateSlices, 50)
+    if (calculateSlicesRetries++ < MAX_CALCULATE_SLICES_RETRIES) {
+      setTimeout(calculateSlices, 50)
+    }
     return
   }
+  calculateSlicesRetries = 0
 
   const startColIndex = Math.max(0, findColumnIndex(scrollLeft.value))
   const endColIndex = Math.min(

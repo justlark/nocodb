@@ -4,6 +4,12 @@ import axios, { type CancelTokenSource } from 'axios'
 
 const CancelToken = axios.CancelToken
 
+// Minimum delay between notification polls to prevent tight loops.
+// The server long-polls for 30s, so under normal conditions the actual
+// interval is ~30s.  This floor only matters when the server responds
+// instantly (e.g. auth error on shared-base pages).
+const POLL_MIN_DELAY_MS = 1000
+
 export const useNotification = defineStore('notificationStore', () => {
   const readNotifications = ref<NotificationType[]>([])
 
@@ -20,6 +26,8 @@ export const useNotification = defineStore('notificationStore', () => {
   const { api, isLoading } = useApi()
 
   const { token } = useGlobal()
+
+  const route = useRoute()
 
   let timeOutId: number | null = null
 
@@ -38,9 +46,15 @@ export const useNotification = defineStore('notificationStore', () => {
     timeout: 30000,
   })
 
+  const isSharedBasePage = computed(() => route.params?.typeOrId === 'base')
+
   const pollNotifications = async () => {
     try {
       if (!token.value) return
+
+      // On shared-base pages the request interceptor strips xc-auth, so
+      // notification API calls will always fail.  Skip polling entirely.
+      if (isSharedBasePage.value) return
 
       const res = await sharedExecutionPollNotificationsApiCall()
 
@@ -52,7 +66,7 @@ export const useNotification = defineStore('notificationStore', () => {
         unreadCount.value = unreadCount.value + 1
       }
 
-      timeOutId = setTimeout(pollNotifications, 0)
+      timeOutId = setTimeout(pollNotifications, POLL_MIN_DELAY_MS)
     } catch (e) {
       // If request is cancelled, do nothing
       if (axios.isCancel(e)) return
@@ -196,6 +210,10 @@ export const useNotification = defineStore('notificationStore', () => {
   }
 
   const init = async () => {
+    // On shared-base pages the request interceptor strips xc-auth, so all
+    // notification API calls would fail.  Skip initialisation entirely.
+    if (isSharedBasePage.value) return
+
     await Promise.allSettled([loadReadNotifications(), loadUnReadNotifications()])
     // For playwright, polling will cause the test to hang indefinitely
     // as we wait for the networkidle event. So, we disable polling for playwright

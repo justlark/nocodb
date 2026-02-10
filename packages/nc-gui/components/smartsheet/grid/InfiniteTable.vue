@@ -1567,6 +1567,9 @@ const updateSliceIfNeeded = (newStart, newEnd, slice) => {
 }
 
 // Optimized calculateSlices function
+let calculateSlicesRetries = 0
+const MAX_CALCULATE_SLICES_RETRIES = 20
+
 const calculateSlices = () => {
   // Skip calculation if the grid wrapper is not rendered yet
   if (!gridWrapper.value) {
@@ -1575,10 +1578,13 @@ const calculateSlices = () => {
       end: 0,
     })
 
-    // Retry calculation after a short delay
-    setTimeout(calculateSlices, 50)
+    // Retry calculation after a short delay (with limit to prevent infinite loop)
+    if (calculateSlicesRetries++ < MAX_CALCULATE_SLICES_RETRIES) {
+      setTimeout(calculateSlices, 50)
+    }
     return
   }
+  calculateSlicesRetries = 0
 
   // Avoid recalculating if only vertical scrolling occurred and no major change
   if (
