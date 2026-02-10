@@ -49,7 +49,6 @@
   ],
   "ignorePaths": [
     "**/node_modules/**",
-    "**/nc-lib-gui/**",
     "**/nocodb-legacy/**",
     "**/test/**",
     "**/tests/**",
