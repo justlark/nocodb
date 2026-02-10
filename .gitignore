@@ -100,3 +100,4 @@ httpbin
 result
 
 .cursorignore
+/.claude
