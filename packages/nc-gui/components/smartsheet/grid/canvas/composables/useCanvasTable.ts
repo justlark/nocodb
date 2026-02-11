@@ -325,10 +325,14 @@ export function useCanvasTable({
         let relatedColObj
         let relatedTableMeta
 
-        /**
-         * Add any extra computed things inside extra and use it
-         */
-        f.extra = {}
+        // Bypass Vue's reactive proxy when setting .extra to avoid triggering
+        // reactive notifications from inside a computed. The field objects are the
+        // same references as meta.value.columns, so reactive SET on them would
+        // propagate to any watcher/computed tracking those objects (e.g. deep
+        // watchers on meta), potentially creating a feedback loop that pins the CPU.
+        const rawField = toRaw(f)
+
+        rawField.extra = {}
         if ([UITypes.Lookup, UITypes.Rollup].includes(f.uidt)) {
           relatedColObj = metas.value?.[f.fk_model_id!]?.columns?.find(
             (c) => c.id === f?.colOptions?.fk_relation_column_id,
@@ -344,15 +348,15 @@ export function useCanvasTable({
         }
 
         if ([UITypes.SingleSelect, UITypes.MultiSelect].includes(f.uidt)) {
-          f.extra = getSingleMultiselectColOptions(f)
+          rawField.extra = getSingleMultiselectColOptions(f)
         } else if ([UITypes.User, UITypes.CreatedBy, UITypes.LastModifiedBy].includes(f.uidt)) {
-          f.extra = getUserColOptions(f, baseUsers.value)
+          rawField.extra = getUserColOptions(f, baseUsers.value)
         }
 
         if ([UITypes.DateTime].includes(f.uidt)) {
           const meta = parseProp(f.meta)
-          f.extra.timezone = isEeUI ? getTimeZoneFromName(meta?.timezone) : undefined
-          f.extra.isDisplayTimezone = isEeUI ? meta?.isDisplayTimezone : undefined
+          rawField.extra.timezone = isEeUI ? getTimeZoneFromName(meta?.timezone) : undefined
+          rawField.extra.isDisplayTimezone = isEeUI ? meta?.isDisplayTimezone : undefined
         }
         if ([UITypes.Formula].includes(f.uidt)) {
           const referencedColumn = (f.colOptions as FormulaType)?.parsed_tree?.referencedColumn
@@ -364,7 +368,7 @@ export function useCanvasTable({
             : undefined
 
           if ([UITypes.DateTime].includes(displayType)) {
-            if (displayColumnConfig.meta) {
+            if (displayColumnConfig?.meta) {
               const displayColumnConfigMeta = displayColumnConfig.meta
 
               const extra = {
@@ -374,11 +378,11 @@ export function useCanvasTable({
                     : undefined,
                 isDisplayTimezone: isEeUI ? displayColumnConfigMeta.isDisplayTimezone : undefined,
               }
-              displayColumnConfig.extra = extra
+              toRaw(displayColumnConfig).extra = extra
             }
           }
-          f.extra.display_type = displayType
-          f.extra.display_column_meta = displayColumnConfig
+          rawField.extra.display_type = displayType
+          rawField.extra.display_column_meta = displayColumnConfig
         }
 
         const isInvalid = isColumnInvalid({
