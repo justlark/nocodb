@@ -316,10 +316,7 @@ export function useCanvasTable({
 
   const isAiFillMode = computed(() => (isMac() ? !!metaKey?.value : !!ctrlKey?.value) && isAiFeaturesEnabled.value)
 
-  const fetchMetaIds = ref<string[][]>([])
-
   const columns = computed<CanvasGridColumn[]>(() => {
-    const fetchMetaIdsLocal: string[] = []
     const cols = fields.value
       .map((f) => {
         if (!f.id) return false
@@ -337,20 +334,12 @@ export function useCanvasTable({
             (c) => c.id === f?.colOptions?.fk_relation_column_id,
           ) as ColumnType
 
-          if (relatedColObj && relatedColObj.colOptions?.fk_related_model_id) {
-            if (!metas.value?.[relatedColObj.colOptions.fk_related_model_id]) {
-              fetchMetaIdsLocal.push([relatedColObj.id, relatedColObj.colOptions.fk_related_model_id])
-            } else {
-              relatedTableMeta = metas.value?.[relatedColObj.colOptions.fk_related_model_id]
-            }
+          if (relatedColObj?.colOptions?.fk_related_model_id) {
+            relatedTableMeta = metas.value?.[relatedColObj.colOptions.fk_related_model_id]
           }
         } else if (isLTAR(f.uidt, f.colOptions)) {
           if (f.colOptions?.fk_related_model_id) {
-            if (!metas.value?.[f.colOptions.fk_related_model_id]) {
-              fetchMetaIdsLocal.push([f.id, f.colOptions.fk_related_model_id])
-            } else {
-              relatedTableMeta = metas.value?.[f.colOptions.fk_related_model_id]
-            }
+            relatedTableMeta = metas.value?.[f.colOptions.fk_related_model_id]
           }
         }
 
@@ -447,8 +436,6 @@ export function useCanvasTable({
       })
       .filter((c) => !!c)
       .sort((a, b) => !!b.fixed - !!a.fixed)
-
-    fetchMetaIds.value.push(...fetchMetaIdsLocal)
 
     cols.splice(0, 0, {
       id: 'row_number',
@@ -1356,14 +1343,54 @@ export function useCanvasTable({
     }
   })
 
-  // load metas and refresh canvas
+  // Detect missing related-table metas without side effects in the columns computed.
+  // Deduplicates by tableId so each missing meta is only listed once.
+  const pendingMetaIds = computed<[string, string][]>(() => {
+    const seen = new Set<string>()
+    const result: [string, string][] = []
+
+    for (const f of fields.value) {
+      if (!f.id) continue
+
+      if ([UITypes.Lookup, UITypes.Rollup].includes(f.uidt)) {
+        const relatedColObj = metas.value?.[f.fk_model_id!]?.columns?.find(
+          (c: ColumnType) => c.id === f?.colOptions?.fk_relation_column_id,
+        ) as ColumnType
+
+        const relatedModelId = relatedColObj?.colOptions?.fk_related_model_id
+        if (relatedModelId && !metas.value?.[relatedModelId] && !seen.has(relatedModelId)) {
+          seen.add(relatedModelId)
+          result.push([relatedColObj.id, relatedModelId])
+        }
+      } else if (isLTAR(f.uidt, f.colOptions)) {
+        const relatedModelId = f.colOptions?.fk_related_model_id
+        if (relatedModelId && !metas.value?.[relatedModelId] && !seen.has(relatedModelId)) {
+          seen.add(relatedModelId)
+          result.push([f.id, relatedModelId])
+        }
+      }
+    }
+
+    return result
+  })
+
+  // Track which table IDs have already been requested to prevent duplicate
+  // in-flight fetches (pendingMetaIds re-evaluates while requests are still running).
+  const requestedMetaTableIds = new Set<string>()
+
+  // Load missing metas and refresh canvas
   watch(
-    () => fetchMetaIds.value.length,
-    async () => {
-      if (!fetchMetaIds.value.length) return
+    pendingMetaIds,
+    async (ids) => {
+      const newIds = ids.filter(([_, tableId]) => !requestedMetaTableIds.has(tableId))
+      if (!newIds.length) return
+
+      for (const [_, tableId] of newIds) {
+        requestedMetaTableIds.add(tableId)
+      }
 
       await Promise.all(
-        fetchMetaIds.value.map(async ([colId, tableId]) => {
+        newIds.map(async ([colId, tableId]) => {
           try {
             await getMeta(tableId, false, false, undefined, true)
           } catch {}
@@ -1372,7 +1399,6 @@ export function useCanvasTable({
           }
         }),
       )
-      fetchMetaIds.value = []
       triggerRefreshCanvas()
     },
   )
