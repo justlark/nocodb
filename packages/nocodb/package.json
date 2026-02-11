@@ -1,6 +1,11 @@
 {
   "name": "nocodb",
   "version": "0.265.0",
+  "pnpm": {
+    "overrides": {
+      "lru-cache": "< 11.2.0"
+    }
+  },
   "description": "NocoDB Backend",
   "main": "dist/bundle.js",
   "author": {
