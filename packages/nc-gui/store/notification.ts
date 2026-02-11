@@ -21,7 +21,13 @@ export const useNotification = defineStore('notificationStore', () => {
 
   const { token } = useGlobal()
 
+  const route = useRoute()
+
   let timeOutId: number | null = null
+
+  // Minimum delay between notification polls to avoid tight loops when the
+  // backend returns quickly (e.g., on shared base pages where auth is stripped).
+  const POLL_INTERVAL_MS = 1000
 
   let cancelTokenSource: CancelTokenSource | null
 
@@ -38,9 +44,13 @@ export const useNotification = defineStore('notificationStore', () => {
     timeout: 30000,
   })
 
+  const isSharedBasePage = computed(() => route.params.typeOrId === 'base')
+
   const pollNotifications = async () => {
     try {
-      if (!token.value) return
+      // Don't poll on shared base pages — the API interceptor strips auth,
+      // so notification calls always fail and create a tight retry loop.
+      if (!token.value || isSharedBasePage.value) return
 
       const res = await sharedExecutionPollNotificationsApiCall()
 
@@ -52,7 +62,7 @@ export const useNotification = defineStore('notificationStore', () => {
         unreadCount.value = unreadCount.value + 1
       }
 
-      timeOutId = setTimeout(pollNotifications, 0)
+      timeOutId = setTimeout(pollNotifications, POLL_INTERVAL_MS)
     } catch (e) {
       // If request is cancelled, do nothing
       if (axios.isCancel(e)) return
