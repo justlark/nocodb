@@ -1,4 +1,3 @@
-import type { WatchStopHandle } from 'vue'
 import type { TableType } from 'nocodb-sdk'
 
 export const useMetas = createSharedComposable(() => {
@@ -23,6 +22,10 @@ export const useMetas = createSharedComposable(() => {
 
   const loadingState = useState<Record<string, boolean>>('metas-loading-state', () => ({}))
 
+  // In-flight getMeta promises. Concurrent callers for the same key share one
+  // API request instead of each spinning in a while-loop creating setTimeout/watch pairs.
+  const loadingPromises = new Map<string, Promise<TableType | null>>()
+
   const setMeta = async (model: any) => {
     metas.value = {
       ...metas.value,
@@ -31,7 +34,6 @@ export const useMetas = createSharedComposable(() => {
     }
   }
 
-  // todo: this needs a proper refactor, arbitrary waiting times are usually not a good idea
   const getMeta = async (
     tableIdOrTitle: string,
     force = false,
@@ -44,38 +46,15 @@ export const useMetas = createSharedComposable(() => {
 
     const tables = (baseId ? baseTables.value.get(baseId) : _tables.value) ?? []
 
-    /** wait until loading is finished if requesting same meta
-     * use while to recheck loading state since it can be changed by other requests
-     * */
-    // eslint-disable-next-line no-unmodified-loop-condition
-    while (!force && loadingState.value[tableIdOrTitle]) {
-      await new Promise((resolve) => {
-        let unwatch: WatchStopHandle
+    // Return cached meta if available
+    if (!force && metas.value[tableIdOrTitle]) {
+      return metas.value[tableIdOrTitle]
+    }
 
-        // set maximum 10sec timeout to wait loading meta
-        const timeout = setTimeout(() => {
-          unwatch?.()
-          clearTimeout(timeout)
-          resolve(null)
-        }, 10000)
-
-        // watch for loading state change
-        unwatch = watch(
-          () => !!loadingState.value[tableIdOrTitle],
-          (isLoading) => {
-            if (!isLoading) {
-              clearTimeout(timeout)
-              unwatch?.()
-              resolve(null)
-            }
-          },
-          { immediate: true },
-        )
-      })
-
-      if (metas.value[tableIdOrTitle]) {
-        return metas.value[tableIdOrTitle]
-      }
+    // If another caller is already loading this meta, await the same promise
+    // instead of creating new setTimeout/watch pairs in a while-loop.
+    if (!force && loadingPromises.has(tableIdOrTitle)) {
+      return loadingPromises.get(tableIdOrTitle)!
     }
 
     // return null if cache miss
@@ -83,36 +62,42 @@ export const useMetas = createSharedComposable(() => {
 
     loadingState.value[tableIdOrTitle] = true
 
-    try {
-      if (!force && metas.value[tableIdOrTitle]) {
-        return metas.value[tableIdOrTitle]
-      }
-      const modelId =
-        (tables.find((t) => t.id === tableIdOrTitle) || tables.find((t) => t.title === tableIdOrTitle))?.id || tableIdOrTitle
+    const promise = (async () => {
+      try {
+        const modelId =
+          (tables.find((t) => t.id === tableIdOrTitle) || tables.find((t) => t.title === tableIdOrTitle))?.id || tableIdOrTitle
 
-      const model = await $api.dbTable.read(modelId)
-      metas.value = {
-        ...metas.value,
-        [model.id!]: model,
-        [model.title]: model,
-      }
+        const model = await $api.dbTable.read(modelId)
+        metas.value = {
+          ...metas.value,
+          [model.id!]: model,
+          [model.title]: model,
+        }
 
-      return model
-    } catch (e: any) {
-      if (!disableError) {
-        message.error(await extractSdkResponseErrorMsg(e))
-      }
+        return model
+      } catch (e: any) {
+        if (!disableError) {
+          message.error(await extractSdkResponseErrorMsg(e))
+        }
 
-      if (navigateOnNotFound) {
-        ncNavigateTo({
-          workspaceId: activeWorkspaceId.value,
-          baseId: activeProjectId.value,
-        })
+        if (navigateOnNotFound) {
+          ncNavigateTo({
+            workspaceId: activeWorkspaceId.value,
+            baseId: activeProjectId.value,
+          })
+        }
+        return null
+      } finally {
+        delete loadingState.value[tableIdOrTitle]
+        // Only remove if this is still the active promise (a force-load may have replaced it)
+        if (loadingPromises.get(tableIdOrTitle) === promise) {
+          loadingPromises.delete(tableIdOrTitle)
+        }
       }
-    } finally {
-      delete loadingState.value[tableIdOrTitle]
-    }
-    return null
+    })()
+
+    loadingPromises.set(tableIdOrTitle, promise)
+    return promise
   }
 
   const clearAllMeta = () => {
