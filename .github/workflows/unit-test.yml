@@ -39,4 +39,4 @@ jobs:
         run: pnpm bootstrap
       - name: run unit tests
         working-directory: ./packages/nocodb
-        run: pnpm run unit-test
+        run: pnpm run test:unit

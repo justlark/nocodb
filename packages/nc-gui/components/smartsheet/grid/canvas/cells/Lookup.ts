@@ -47,10 +47,14 @@ export const LookupCellRenderer: CellRenderer = {
         ? Math.floor(height / 2 - rowHeightInPx['1']! / 2)
         : 0)
 
+    // Use toRaw to bypass Vue's reactive proxy — lookupColumn comes from
+    // metas (reactive), and SET through the proxy would trigger reactive
+    // notifications that can cascade to other effects.
+    const rawLookupColumn = toRaw(lookupColumn)
     if ([UITypes.SingleSelect, UITypes.MultiSelect].includes(lookupColumn.uidt)) {
-      lookupColumn.extra = getSingleMultiselectColOptions(lookupColumn)
+      rawLookupColumn.extra = getSingleMultiselectColOptions(lookupColumn)
     } else if ([UITypes.User, UITypes.CreatedBy, UITypes.LastModifiedBy].includes(lookupColumn.uidt)) {
-      lookupColumn.extra = getUserColOptions(lookupColumn, props.baseUsers || [])
+      rawLookupColumn.extra = getUserColOptions(lookupColumn, props.baseUsers || [])
     }
 
     const getArrValue = () => {

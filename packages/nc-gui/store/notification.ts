@@ -21,12 +21,15 @@ export const useNotification = defineStore('notificationStore', () => {
 
   const { token } = useGlobal()
 
+  const route = useRoute()
+
   let timeOutId: number | null = null
 
-  let cancelTokenSource: CancelTokenSource | null
+  // Minimum delay between notification polls to avoid tight loops when the
+  // backend returns quickly (e.g., on shared base pages where auth is stripped).
+  const POLL_INTERVAL_MS = 1000
 
-  // Guard to prevent multiple concurrent poll loops
-  let isPolling = false
+  let cancelTokenSource: CancelTokenSource | null
 
   const pollNotificationsApiCall = async () => {
     // set up cancel token for polling to cancel when token changes/token is removed
@@ -41,15 +44,13 @@ export const useNotification = defineStore('notificationStore', () => {
     timeout: 30000,
   })
 
-  const pollNotifications = async () => {
-    if (isPolling) return
-    isPolling = true
+  const isSharedBasePage = computed(() => route.params.typeOrId === 'base')
 
+  const pollNotifications = async () => {
     try {
-      if (!token.value) {
-        isPolling = false
-        return
-      }
+      // Don't poll on shared base pages — the API interceptor strips auth,
+      // so notification calls always fail and create a tight retry loop.
+      if (!token.value || isSharedBasePage.value) return
 
       const res = await sharedExecutionPollNotificationsApiCall()
 
@@ -61,12 +62,8 @@ export const useNotification = defineStore('notificationStore', () => {
         unreadCount.value = unreadCount.value + 1
       }
 
-      isPolling = false
-      // Use a minimum 1s delay to prevent tight loops when the server
-      // or a CDN proxy responds faster than the expected 30s hold.
-      timeOutId = setTimeout(pollNotifications, 1000)
+      timeOutId = setTimeout(pollNotifications, POLL_INTERVAL_MS)
     } catch (e) {
-      isPolling = false
       // If request is cancelled, do nothing
       if (axios.isCancel(e)) return
       // If network error, retry after 2 seconds
@@ -199,8 +196,6 @@ export const useNotification = defineStore('notificationStore', () => {
       clearTimeout(timeOutId)
       timeOutId = null
     }
-    // Reset the guard so a new poll loop can start after clearing
-    isPolling = false
     // take a reference of the cancel token source and set the current one to null
     // so that we can cancel the polling request even if token changes
     const source = cancelTokenSource
@@ -215,7 +210,7 @@ export const useNotification = defineStore('notificationStore', () => {
     // For playwright, polling will cause the test to hang indefinitely
     // as we wait for the networkidle event. So, we disable polling for playwright
     if (!ncIsPlaywright()) {
-      await clearPolling()
+      clearPolling().catch((e) => console.log(e))
       pollNotifications().catch((e) => console.log(e))
     }
   }
