@@ -19,7 +19,6 @@ import { Base, Store, User } from '~/models';
 import Noco from '~/Noco';
 import { isCloud, isOnPrem, T } from '~/utils';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
-import getInstance from '~/utils/getInstance';
 import { CacheScope, MetaTable, RootScopes } from '~/utils/globals';
 import { jdbcToXcConfig } from '~/utils/nc-config/helpers';
 import { packageVersion } from '~/utils/packageVersion';
@@ -411,7 +410,6 @@ export class UtilsService {
 
   async appInfo(param: { req: { ncSiteUrl: string } }) {
     const baseHasAdmin = !(await User.isFirst());
-    const instance = await getInstance();
 
     let settings: { invite_only_signup?: boolean } = {};
     try {
@@ -424,14 +422,6 @@ export class UtilsService {
     const oidcProviderName = oidcAuthEnabled
       ? process.env.NC_OIDC_PROVIDER_NAME ?? 'OpenID Connect'
       : null;
-
-    let giftUrl: string;
-
-    if (instance.impacted >= 5) {
-      giftUrl = `https://w21dqb1x.nocodb.com/#/nc/form/4d2e0e4b-df97-4c5e-ad8e-f8b8cca90330?Users=${
-        instance.impacted
-      }&Bases=${instance.projectsExt + instance.projectsMeta}`;
-    }
 
     const samlAuthEnabled = process.env.NC_SSO?.toLowerCase() === 'saml';
     const samlProviderName = samlAuthEnabled
@@ -485,20 +475,10 @@ export class UtilsService {
       inviteOnlySignup: settings.invite_only_signup,
       samlProviderName,
       samlAuthEnabled,
-      giftUrl,
       prodReady: Noco.getConfig()?.meta?.db?.client !== DriverClient.SQLITE,
       allowLocalUrl: process.env.NC_ALLOW_LOCAL_HOOKS === 'true',
       isOnPrem,
       disableSupportChat: NC_DISABLE_SUPPORT_CHAT,
-      /**
-       * Allow disabling onboarding flow based on env variable or development mode
-       *
-       * TODO: @rameshmane7218 remove test env once we enable onboarding flow in playwright
-       */
-      disableOnboardingFlow:
-        process.env.NC_DISABLE_ONBOARDING_FLOW === 'true' ||
-        process.env.NODE_ENV === 'development' ||
-        process.env.NODE_ENV === 'test',
     };
 
     return result;

@@ -68,7 +68,6 @@ export function useGlobalState(storageKey = 'nocodb-gui-v2'): State {
     },
     isAddNewRecordGridMode: true,
     syncDataUpvotes: [],
-    giftBannerDismissedCount: 0,
     isLeftSidebarOpen: !isViewPortMobile(),
   }
 
@@ -116,7 +115,6 @@ export function useGlobalState(storageKey = 'nocodb-gui-v2'): State {
     disableEmailAuth: false,
     dashboardPath: '/dashboard',
     inviteOnlySignup: false,
-    giftUrl: '',
     isOnPrem: false,
   })
 
