@@ -14,7 +14,7 @@ on:
         options:
           - DEV
           - PROD
-  # Triggered by release-nocodb.yml / release-nightly-dev.yml / release-pr.yml
+  # Triggered by release-nocodb.yml / release-pr.yml
   workflow_call:
     inputs:
       tag:
@@ -24,10 +24,6 @@ on:
       targetEnv:
         description: "Target Environment"
         required: true
-        type: string
-      isDaily:
-        description: "Is it triggered by daily schedule"
-        required: false
         type: string
       currentVersion:
         description: "The current NocoDB version"
@@ -52,15 +48,10 @@ jobs:
         id: get-docker-repository
         run: |
           TARGET_ENV=${{ github.event.inputs.targetEnv || inputs.targetEnv }}
-          IS_DAILY=${{ inputs.isDaily || 'N' }}
 
           if [[ "$TARGET_ENV" == 'PROD' ]]; then
             DOCKER_REPOSITORY=nocodb-fanjam
             DOCKERFILE=Dockerfile
-            PLATFORMS="linux/amd64"
-          elif [[ "$IS_DAILY" == 'Y' ]]; then
-            DOCKER_REPOSITORY=nocodb-fanjam-daily
-            DOCKERFILE=Dockerfile.timely
             PLATFORMS="linux/amd64"
           else
             DOCKER_REPOSITORY=nocodb-fanjam-timely

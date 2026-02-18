@@ -5,10 +5,8 @@ const router = useRouter()
 
 const route = router.currentRoute
 
-const { showOnboardingFlow } = useOnboardingFlow()
-
 const disableBaseLayout = computed(
-  () => route.value.path.startsWith('/nc/view') || route.value.path.startsWith('/nc/form') || showOnboardingFlow.value,
+  () => route.value.path.startsWith('/nc/view') || route.value.path.startsWith('/nc/form'),
 )
 
 const { isExperimentalFeatureModalOpen, initializeFeatures, isFeatureEnabled } = useBetaFeatureToggle()

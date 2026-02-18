@@ -58,7 +58,6 @@ jobs:
       currentVersion: ${{ needs.set-tag.outputs.current_version }}
       tag: ${{ needs.set-tag.outputs.target_tag }}
       targetEnv: 'DEV'
-      isDaily: 'N'
 
   # Add a comment for PR docker build
   leave-comment:
