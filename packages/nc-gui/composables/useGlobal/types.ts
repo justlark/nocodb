@@ -38,7 +38,6 @@ export interface AppInfo {
   inviteOnlySignup: boolean
   samlAuthEnabled: boolean
   samlProviderName: string | null
-  giftUrl: string
   feedEnabled: boolean
   sentryDSN: string
   isOnPrem: boolean
@@ -46,7 +45,6 @@ export interface AppInfo {
   marketingRootUrl?: string
   openReplayKey?: string | null
   disableSupportChat: boolean
-  disableOnboardingFlow: boolean
   iframeWhitelistDomains?: Array<string>
 }
 
@@ -69,7 +67,6 @@ export interface StoredState {
   }
   isAddNewRecordGridMode: boolean
   syncDataUpvotes: string[]
-  giftBannerDismissedCount: number
   isLeftSidebarOpen: boolean
 }
 
