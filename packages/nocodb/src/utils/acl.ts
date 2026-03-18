@@ -146,6 +146,8 @@ const permissionScopes = {
     'nestedDataUnlink',
     'nestedListCopyPasteOrDeleteAll',
     'baseUserList',
+    'baseUserUpdate',
+    'baseUserDelete',
     'sourceCreate',
 
     // Base API Tokens
@@ -312,6 +314,9 @@ const rolePermissions:
       // AI
       aiUtils: true,
       aiData: true,
+
+      baseUserUpdate: true,
+      baseUserDelete: true,
     },
   },
   [ProjectRoles.CREATOR]: {
