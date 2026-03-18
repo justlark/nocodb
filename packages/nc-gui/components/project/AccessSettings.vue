@@ -109,7 +109,7 @@ const loadCollaborators = async () => {
 }
 
 const isOwnerOrCreator = computed(() => {
-  return baseRoles.value?.[ProjectRoles.OWNER] || baseRoles.value?.[ProjectRoles.CREATOR]
+  return baseRoles.value?.[ProjectRoles.OWNER] || baseRoles.value?.[ProjectRoles.CREATOR] || baseRoles.value?.[ProjectRoles.EDITOR]
 })
 
 const updateCollaborator = async (collab: any, roles: ProjectRoles) => {
