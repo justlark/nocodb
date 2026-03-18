@@ -1,7 +1,7 @@
 ###########
 # Litestream Builder
 ###########
-FROM golang:bullseye AS lt-builder
+FROM golang:1.25-bullseye AS lt-builder
 
 WORKDIR /usr/src/
 
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # build litestream
-RUN git clone https://github.com/benbjohnson/litestream.git litestream
+RUN git clone --depth=1 --branch v0.5.9 https://github.com/benbjohnson/litestream.git litestream
 RUN cd litestream && go install ./cmd/litestream
 RUN cp $GOPATH/bin/litestream /usr/src/lt
 
